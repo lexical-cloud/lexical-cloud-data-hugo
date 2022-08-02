@@ -1,0 +1,9 @@
+[submodule "content"]
+	path = content
+	url = https://github.com/lexical-cloud/lexical-cloud-docs.git
+[submodule "themes/docsy"]
+	path = themes/docsy
+	url = https://github.com/lexical-cloud/docsy.git
+[submodule "public"]
+	path = public
+	url = git@github.com:lexical-cloud/lexical-cloud-data.git

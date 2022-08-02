@@ -1,0 +1,8 @@
+{
+  "title": "{{ .Title }}",
+{{ if .Params.definitionLink }}  "url": {{ .Params.definitionLink | jsonify }},{{ end }}
+{{ with .Params.Services }}  "services": {{ . | jsonify }},{{ end }}
+{{ with .Params.Domains }}  "domains": {{ . | jsonify }},{{ end }}
+{{ with .Params.Categories }}  "categories": {{ . | jsonify }},{{ end }}
+  "permalink": "{{ .RelPermalink | replaceRE "\\.json$" "" }}"
+}

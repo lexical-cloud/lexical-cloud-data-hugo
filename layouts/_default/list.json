@@ -1,0 +1,3 @@
+{{ define "response" }}{{ $lastPage := sub (len .Data.Pages) 1 }}[{{ range $index, $e := .Data.Pages }}{{ chomp (.Render "item") }}{{ if lt $index $lastPage }},
+{{ end }}{{ end }}]
+{{ end }}
