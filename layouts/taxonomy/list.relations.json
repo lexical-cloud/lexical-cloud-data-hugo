@@ -1,59 +1,59 @@
-{{ define "response" }}
-{{ $allRelations := (dict) }}
-{{ $glossaryPage := .Site.GetPage (printf "/glossary/%s.md" (urlize .Page.Name )) }}
-{{ range $page := .Data.Pages }}
-{{   range $taxonomyTerm, $taxonomy := .Site.Taxonomies }}
-{{     if (reflect.IsSlice (index $page.Params $taxonomyTerm)) }}
-{{       $allRelations = merge $allRelations (dict $taxonomyTerm (union (index $allRelations $taxonomyTerm) (index $page.Params $taxonomyTerm) )) }}
-{{     end }}
-{{   end }}
-{{ end }}
-{{ $currentTaxonomy := .Data.Plural }}
-{{ $currentTerm := .Page.Name }}
-{{ if (index $allRelations $currentTaxonomy) }}
-{{   $allRelations = merge $allRelations (dict $currentTaxonomy ((index $allRelations $currentTaxonomy) | complement (slice .Page.Name ) )) }}
-{{ end }}
+{{- define "response" }}
+{{- $allRelations := (dict) }}
+{{- $glossaryPage := .Site.GetPage (printf "/glossary/%s.md" (urlize .Page.Name )) }}
+{{- range $page := where .Data.Pages "Section" "docs" }}
+{{-   range $taxonomyTerm, $taxonomy := .Site.Taxonomies }}
+{{-     if (reflect.IsSlice (index $page.Params $taxonomyTerm)) }}
+{{-       $allRelations = merge $allRelations (dict $taxonomyTerm (union (index $allRelations $taxonomyTerm) (index $page.Params $taxonomyTerm) )) }}
+{{-     end }}
+{{-   end }}
+{{- end }}
+{{- $currentTaxonomy := .Data.Plural }}
+{{- $currentTerm := .Page.Name }}
+{{- if (index $allRelations $currentTaxonomy) }}
+{{-   $allRelations = merge $allRelations (dict $currentTaxonomy ((index $allRelations $currentTaxonomy) | complement (slice .Page.Name ) )) }}
+{{- end }}
 
-{{ $hierRelations := (dict) }}
-{{ range $taxonomyTerm, $relatedTerms := $allRelations }}
-{{   $hierTerms := (index $glossaryPage.Params $taxonomyTerm) | default (slice ) }} 
-{{   $hierRelations = merge $hierRelations (dict $taxonomyTerm (union (index $hierRelations $taxonomyTerm) $hierTerms)) }}
-{{   range $hierTerm := $hierTerms }} 
-{{     $termGlossaryPage := $.Site.GetPage (printf "/glossary/%s.md" (urlize $hierTerm )) }} 
-{{     range (slice "categories" "domains" "services") }}
-{{       $hierRelations = merge $hierRelations (dict . (union (index $hierRelations . | default slice) (index $termGlossaryPage.Params . ))) }}
-{{       range $nestedHierTerm := (index $termGlossaryPage.Params . | default (slice )) }}
-{{         $nestedTermGlossaryPage := $.Site.GetPage (printf "/glossary/%s.md" (urlize $nestedHierTerm )) }} 
-{{         range (slice "categories" "domains" "services") }}
-{{           $hierRelations = merge $hierRelations (dict . (union (index $hierRelations . | default slice) (index $nestedTermGlossaryPage.Params . ))) }}
-{{         end }}
-{{       end }}
-{{     end }}
-{{   end }}
-{{ end }}
+{{- $hierRelations := (dict) }}
+{{- range $taxonomyTerm, $relatedTerms := $allRelations }}
+{{-   $hierTerms := (index $glossaryPage.Params $taxonomyTerm) | default (slice ) }} 
+{{-   $hierRelations = merge $hierRelations (dict $taxonomyTerm (union (index $hierRelations $taxonomyTerm) $hierTerms)) }}
+{{-   range $hierTerm := $hierTerms }} 
+{{-     $termGlossaryPage := $.Site.GetPage (printf "/glossary/%s.md" (urlize $hierTerm )) }} 
+{{-     range (slice "categories" "domains" "services") }}
+{{-       $hierRelations = merge $hierRelations (dict . (union (index $hierRelations . | default slice) (index $termGlossaryPage.Params . ))) }}
+{{-       range $nestedHierTerm := (index $termGlossaryPage.Params . | default (slice )) }}
+{{-         $nestedTermGlossaryPage := $.Site.GetPage (printf "/glossary/%s.md" (urlize $nestedHierTerm )) }} 
+{{-         range (slice "categories" "domains" "services") }}
+{{-           $hierRelations = merge $hierRelations (dict . (union (index $hierRelations . | default slice) (index $nestedTermGlossaryPage.Params . ))) }}
+{{-         end }}
+{{-       end }}
+{{-     end }}
+{{-   end }}
+{{- end }}
 
-{{ $hierarchyResult := (dict ) }}
-{{ $intersectResult := (dict ) }}
-{{ range $taxonomyTerm, $relatedTerms := $allRelations }}
-{{   $hierTerms := index $hierRelations $taxonomyTerm }}
-{{   $intersectTerms := (slice ) }}
-{{   range $relatedTerm := $relatedTerms }}
-{{     if not (in $hierTerms $relatedTerm) }}
-{{       $intersectTerms = $intersectTerms | append $relatedTerm  }}
-{{     end }}
-{{   end }}
-{{   if $intersectTerms }}
-{{     $intersectResult = merge $intersectResult (dict $taxonomyTerm $intersectTerms) }} 
-{{   end }}
-{{   if $hierTerms }}
-{{     $hierarchyResult = merge $hierarchyResult (dict $taxonomyTerm $hierTerms) }} 
-{{   end }}
-{{ end }}
+{{- $hierarchyResult := (dict ) }}
+{{- $intersectResult := (dict ) }}
+{{- range $taxonomyTerm, $relatedTerms := $allRelations }}
+{{-   $hierTerms := index $hierRelations $taxonomyTerm }}
+{{-   $intersectTerms := (slice ) }}
+{{-   range $relatedTerm := $relatedTerms }}
+{{-     if not (in $hierTerms $relatedTerm) }}
+{{-       $intersectTerms = $intersectTerms | append $relatedTerm  }}
+{{-     end }}
+{{-   end }}
+{{-   if $intersectTerms }}
+{{-     $intersectResult = merge $intersectResult (dict $taxonomyTerm $intersectTerms) }} 
+{{-   end }}
+{{-   if $hierTerms }}
+{{-     $hierarchyResult = merge $hierarchyResult (dict $taxonomyTerm $hierTerms) }} 
+{{-   end }}
+{{- end }}
 
-{{ $instanceResult := (slice) }}
-{{ range .Data.Pages }}
-{{   $instanceResult = $instanceResult | append (replaceRE "\\.json$" "" .RelPermalink)  }}
-{{ end }}
+{{- $instanceResult := (slice) }}
+{{- range where .Data.Pages "Section" "docs" }}
+{{-   $instanceResult = $instanceResult | append (replaceRE "\\.json$" "" .RelPermalink)  }}
+{{- end }}
 
-{{ (dict "hierarchical" $hierarchyResult "intersection" $intersectResult "instance" $instanceResult) | jsonify (dict "indent" "  ") }}
-{{ end }}
+{{- (dict "hierarchical" $hierarchyResult "intersection" $intersectResult "instance" $instanceResult) | jsonify (dict "indent" "  ") }}
+{{- end }}
