@@ -1,3 +1,9 @@
-{{ define "response" }}{{ $lastPage := sub (len .Data.Pages) 1 }}[{{ range $index, $e := .Data.Pages }}{{ chomp (.Render "item") }}{{ if lt $index $lastPage }},
-{{ end }}{{ end }}]
-{{ end }}
+{{- define "response" }}
+{{- $lastPage := sub (len .Data.Pages) 1 -}}
+[
+{{- range $index, $e := where .Data.Pages "Section" "in" (slice "docs" "glossary") }}
+  {{ replace (chomp (.Render "item")) "\n" "\n  " }}
+  {{- if lt $index $lastPage }},{{ end }}
+{{- end }}
+]
+{{- end }}

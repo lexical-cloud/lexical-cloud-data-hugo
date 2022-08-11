@@ -1,8 +1,10 @@
-{{ define "response" }}{{ $glossaryPage := .Site.GetPage (printf "/glossary/%s.md" (urlize .Page.Name )) }}{
+{{- define "response" }}
+{{- $glossaryPage := .Site.GetPage (printf "/glossary/%s.md" (urlize .Page.Name )) -}}
+{
   "id": {{ urlize .Page.Title | jsonify }},
   "name": {{ .Page.Title | jsonify }},
   "type": {{ .Data.Singular | jsonify }},
   "permalink": {{ .Page.RelPermalink | replaceRE "\\.json$" "" | jsonify }}{{ with $glossaryPage }},
   "definition": {{ (replace (chomp (.Render "item")) "\n" "\n  ") }}{{ end }}
 }
-{{ end }}
+{{- end }}
