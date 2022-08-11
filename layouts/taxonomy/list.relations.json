@@ -1,7 +1,7 @@
 {{- define "response" }}
 {{- $allRelations := (dict) }}
 {{- $glossaryPage := .Site.GetPage (printf "/glossary/%s.md" (urlize .Page.Name )) }}
-{{- range $page := .Data.Pages }}
+{{- range $page := where .Data.Pages "Section" "docs" }}
 {{-   range $taxonomyTerm, $taxonomy := .Site.Taxonomies }}
 {{-     if (reflect.IsSlice (index $page.Params $taxonomyTerm)) }}
 {{-       $allRelations = merge $allRelations (dict $taxonomyTerm (union (index $allRelations $taxonomyTerm) (index $page.Params $taxonomyTerm) )) }}
