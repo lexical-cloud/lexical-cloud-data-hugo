@@ -32,21 +32,21 @@
 {{-   end }}
 {{- end }}
 
-{{- $hierarchyResult := (dict ) }}
 {{- $intersectResult := (dict ) }}
+{{- $symdiffResult := (dict ) }}
 {{- range $taxonomyTerm, $relatedTerms := $allRelations }}
 {{-   $hierTerms := index $hierRelations $taxonomyTerm }}
-{{-   $intersectTerms := (slice ) }}
+{{-   $symdiffTerms := (slice ) }}
 {{-   range $relatedTerm := $relatedTerms }}
 {{-     if not (in $hierTerms $relatedTerm) }}
-{{-       $intersectTerms = $intersectTerms | append $relatedTerm  }}
+{{-       $symdiffTerms = $symdiffTerms | append $relatedTerm  }}
 {{-     end }}
 {{-   end }}
-{{-   if $intersectTerms }}
-{{-     $intersectResult = merge $intersectResult (dict $taxonomyTerm $intersectTerms) }} 
+{{-   if $symdiffTerms }}
+{{-     $symdiffResult = merge $symdiffResult (dict $taxonomyTerm $symdiffTerms) }} 
 {{-   end }}
 {{-   if $hierTerms }}
-{{-     $hierarchyResult = merge $hierarchyResult (dict $taxonomyTerm $hierTerms) }} 
+{{-     $intersectResult = merge $intersectResult (dict $taxonomyTerm $hierTerms) }} 
 {{-   end }}
 {{- end }}
 
@@ -55,5 +55,5 @@
 {{-   $instanceResult = $instanceResult | append (replaceRE "\\.json$" "" .RelPermalink)  }}
 {{- end }}
 
-{{- (dict "hierarchical" $hierarchyResult "intersection" $intersectResult "instance" $instanceResult) | jsonify (dict "indent" "  ") }}
+{{- (dict "instance" $instanceResult "intersect" $intersectResult "symdiff" $symdiffResult) | jsonify (dict "indent" "  ") }}
 {{- end }}
