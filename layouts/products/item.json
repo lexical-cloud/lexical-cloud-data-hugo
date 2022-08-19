@@ -1,0 +1,50 @@
+{
+{{- $parentProduct := (dict "Params" (dict) ) }}
+{{- if .Params.productHierarchyTier }}
+{{-   $parentProduct = $.GetPage (replaceRE "/$" ".md" .File.Dir ) }}
+  "name": "{{ $parentProduct.Params.Title }}",
+  "model": "{{ .LinkTitle }}",
+{{- else }}
+  "name": "{{ .Title }}",
+{{- end }}
+
+{{- with (union .Params.Providers $parentProduct.Params.Providers) }}
+  "providers": {{ . | jsonify }},
+{{- end }}
+{{- with (union .Params.Services $parentProduct.Params.Services) }}
+  "services": {{ . | jsonify }},
+{{- end }}
+{{- with (union .Params.Domains $parentProduct.Params.Domains) }}
+  "domains": {{ . | jsonify }},
+{{- end }}
+{{- with (union .Params.Categories $parentProduct.Params.Categories) }}
+  "categories": {{ . | jsonify }},
+{{- end }}
+{{- with (union .Params.Features $parentProduct.Params.Features) }}
+  "features": {{ . | jsonify }},
+{{- end }}
+{{- with (union .Params.Labels $parentProduct.Params.Labels) }}
+  "labels": {{ . | jsonify }},
+{{- end }}
+  "links" {
+    "self": "{{ .RelPermalink | replaceRE "\\.json$" "" }}"
+{{- if .Params.productHierarchyTier }}
+    "parent": "{{ $parentProduct.RelPermalink | replaceRE "\\.json$" "" }}"
+{{- else }}
+{{-   $resultDirPath :=  (printf "/%s%s/" .File.Dir .File.TranslationBaseName) }}
+{{-   if os.FileExists $resultDirPath  }}
+{{-     $modelLinks := (slice ) }}
+{{-     range $i, $o := os.ReadDir (printf "/content/en%s" $resultDirPath) }}
+{{-       $resultModelPagePath := (printf "%s%s" $resultDirPath $o.Name )  }}
+{{-       $resultModelPage := $.GetPage $resultModelPagePath }}
+{{-       if (eq $resultModelPage.Params.productHierarchyTier "model") }}
+{{-         $modelLinks = $modelLinks | append (slice (replaceRE "\\.md$" "" $resultModelPagePath)) }}
+{{-       end }}
+{{-     end }}
+{{-     if gt (len $modelLinks) 0  }}
+    "models": {{ $modelLinks | jsonify (dict "prefix" "    " "indent" "  ") }}  
+{{-     end }}
+{{-   end }}
+{{- end }}
+  }
+}

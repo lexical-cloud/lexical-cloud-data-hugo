@@ -1,7 +1,7 @@
 {{- define "response" }}
 {{- $lastPage := sub (len .Data.Pages) 1 -}}
 [
-{{- range $index, $e := where .Data.Pages "Section" "in" (slice "docs" "glossary") }}
+{{- range $index, $e := where .Data.Pages "Section" "in" (slice "products" "glossary") }}
   {{ replace (chomp (.Render "item")) "\n" "\n  " }}
   {{- if lt $index $lastPage }},{{ end }}
 {{- end }}
