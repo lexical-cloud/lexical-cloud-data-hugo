@@ -12,5 +12,7 @@
 {{- with .Params.Categories }}
   "categories": {{ . | jsonify }},
 {{- end }}
-  "permalink": "{{ .RelPermalink | replaceRE "\\.json$" "" }}"
+  "links": {
+    "self": "{{ .RelPermalink | replaceRE "\\.json$" "" }}"
+  }
 }
