@@ -1,9 +1,9 @@
 {
 {{- $parentProduct := (dict "Params" (dict) ) }}
 {{- if .Params.productHierarchyTier }}
-{{-   $parentProduct = $.GetPage (replaceRE "/$" ".md" .File.Dir ) }}
+{{-   $parentProduct = $.GetPage (replaceRE (printf "/%ss/$" .Params.productHierarchyTier) ".md" .File.Dir ) }}
   "name": "{{ $parentProduct.Params.Title }}",
-  "model": "{{ .LinkTitle }}",
+  "{{ .Params.productHierarchyTier }}": "{{ .LinkTitle }}",
 {{- else }}
   "name": "{{ .Title }}",
 {{- end }}
@@ -31,18 +31,20 @@
 {{- if .Params.productHierarchyTier }}
     "parent": "{{ $parentProduct.RelPermalink | replaceRE "\\.json$" "" }}"
 {{- else }}
-{{-   $resultDirPath :=  (printf "/%s%s/" .File.Dir .File.TranslationBaseName) }}
-{{-   if os.FileExists $resultDirPath  }}
-{{-     $modelLinks := (slice ) }}
-{{-     range $i, $o := os.ReadDir (printf "/content/en%s" $resultDirPath) }}
-{{-       $resultModelPagePath := (printf "%s%s" $resultDirPath $o.Name )  }}
-{{-       $resultModelPage := $.GetPage $resultModelPagePath }}
-{{-       if (eq $resultModelPage.Params.productHierarchyTier "model") }}
-{{-         $modelLinks = $modelLinks | append (slice (replaceRE "\\.md$" "" $resultModelPagePath)) }}
+{{-   range $tierId := (slice "component" "model") }}
+{{-     $resultDirPath := (printf "/%s%s/%ss/" $.File.Dir $.File.TranslationBaseName $tierId) }}
+{{-     if os.FileExists $resultDirPath  }}
+{{-       $tierLinks := (slice ) }}
+{{-       range $i, $o := os.ReadDir (printf "/content/en%s" $resultDirPath) }}
+{{-         $resultTierPagePath := (printf "%s%s" $resultDirPath $o.Name )  }}
+{{-         $resultTierPage := $.GetPage $resultTierPagePath }}
+{{-         if (eq $resultTierPage.Params.productHierarchyTier $tierId) }}
+{{-           $tierLinks = $tierLinks | append (slice (replaceRE "\\.md$" "" $resultTierPagePath)) }}
+{{-         end }}
 {{-       end }}
-{{-     end }}
-{{-     if gt (len $modelLinks) 0  }}
-    "models": {{ $modelLinks | jsonify (dict "prefix" "    " "indent" "  ") }}  
+{{-       if gt (len $tierLinks) 0  }}
+    "{{ $tierId }}s": {{ $tierLinks | jsonify (dict "prefix" "    " "indent" "  ") }}  
+{{-       end }}
 {{-     end }}
 {{-   end }}
 {{- end }}

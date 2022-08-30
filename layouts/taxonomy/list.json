@@ -5,8 +5,8 @@
   "name": {{ .Page.Title | jsonify }},
   "type": {{ .Data.Singular | jsonify }},
   "links": {
-    "self": {{ .Page.RelPermalink | replaceRE "\\.json$" "" | jsonify }}{{ with $glossaryPage }},
-  },
+    "self": {{ .Page.RelPermalink | replaceRE "\\.json$" "" | jsonify }}
+  }{{ with $glossaryPage }},
   "definition": {{ (replace (chomp (.Render "item")) "\n" "\n  ") }}{{ end }}
 }
 {{- end }}
