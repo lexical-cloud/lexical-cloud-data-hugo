@@ -26,9 +26,9 @@
 {{- with (union .Params.Labels $parentProduct.Params.Labels) }}
   "labels": {{ . | jsonify }},
 {{- end }}
-  "links" {
+  "links": {
     "self": "{{ .RelPermalink | replaceRE "\\.json$" "" }}"
-{{- if .Params.productHierarchyTier }}
+{{- if .Params.productHierarchyTier }},
     "parent": "{{ $parentProduct.RelPermalink | replaceRE "\\.json$" "" }}"
 {{- else }}
 {{-   range $tierId := (slice "component" "model") }}
@@ -42,7 +42,7 @@
 {{-           $tierLinks = $tierLinks | append (slice (replaceRE "\\.md$" "" $resultTierPagePath)) }}
 {{-         end }}
 {{-       end }}
-{{-       if gt (len $tierLinks) 0  }}
+{{-       if gt (len $tierLinks) 0  }},
     "{{ $tierId }}s": {{ $tierLinks | jsonify (dict "prefix" "    " "indent" "  ") }}  
 {{-       end }}
 {{-     end }}
