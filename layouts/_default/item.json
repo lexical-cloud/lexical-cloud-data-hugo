@@ -18,7 +18,7 @@
 {{- with .Params.Labels }}
   "labels": {{ . | jsonify }},
 {{- end }}
-  "links" {
+  "links": {
     "self": "{{ .RelPermalink | replaceRE "\\.json$" "" }}"
   }
 }
