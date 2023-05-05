@@ -1,0 +1,209 @@
+name: finalize pr
+concurrency: staging
+on:
+  workflow_run:
+    workflows:
+      - 'validate pr'
+    types:
+      - completed
+
+permissions:
+  contents: read
+  pull-requests: write
+  pages: write
+  id-token: write
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+
+  preconditions:
+    # this workflow should only run against the original repo
+    if: |
+      github.repository == 'lexical-cloud/lexical-cloud-data-hugo'
+    runs-on: ubuntu-22.04
+    steps:
+
+      - name: Verify artifacts
+        uses: actions/github-script@v3.1.0
+        with:
+          script: |
+            var artifacts = await github.actions.listWorkflowRunArtifacts({
+               owner: context.repo.owner,
+               repo: context.repo.repo,
+               run_id: ${{ github.event.workflow_run.id }},
+            });
+
+            const isHugoPagesArtifact = artifacts.data.artifacts.filter((artifact) => {
+              return artifact.name == 'hugo-pages'
+            }).length > 0;
+            if(isHugoPagesArtifact) {
+              core.setFailed('found prebuilt github-pages artifact');
+              return;
+            }
+
+            const isPrDataArtifact = artifacts.data.artifacts.filter((artifact) => {
+              return artifact.name == 'pr-data'
+            }).length == 1;
+            if(!isPrDataArtifact) {
+              core.setFailed('missing pr-data artifact');
+              return;
+            }
+
+            const isHugoStaticSiteArtifact = artifacts.data.artifacts.filter((artifact) => {
+              return artifact.name == "hugo-static-site"
+            }).length == 1;
+            if(!isHugoStaticSiteArtifact) {
+              core.setFailed('missing hugo-static-site artifact');
+              return;
+            }
+
+      - name: Precondition passed output
+        run: |
+          echo "Preconditions passed"
+    
+  load-pr-data:
+    needs: preconditions
+    uses: ./.github/workflows/pr-artifact-to-outputs.yml
+
+
+  comment-on-stage:
+    needs:
+      - load-pr-data
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/github-script@v6
+        env:
+          PR_NUM: ${{ needs.load-pr-data.outputs.pr-number }}
+          RUN_NUM: ${{ github.run_number }}
+        with:
+          script: |
+            const { PR_NUM, RUN_NUM } = process.env
+            github.rest.issues.createComment({
+              issue_number: PR_NUM,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `
+            ### Stage phase awaiting approval.
+            _(run ${RUN_NUM} of comment-on-stage in finalize-pr workflow)_
+
+            @lexical-cloud/admins will take these actions:
+              - [ ] Review artifacts generated for staging.
+              - [ ] Decide whether to accept changes for staging prep.
+              - [ ] If accepting, approve and monitor the preparation of staging.
+           
+            Expect a response on this comment when actions are completed.`
+            })
+
+  stage:
+    needs: load-pr-data
+    runs-on: ubuntu-22.04
+    environment: staging
+    outputs:
+      static-site-sha: ${{ steps.save-static-site.outputs.commit-sha }}
+    steps:
+
+      - name: Checkout project with submodules
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+          submodules: true
+          token: ${{ secrets.LC_DAT_CI }}
+
+      - name: Ensure artifacts downloaded to empty directory
+        run: |
+          if [ -f workflow-artifacts ] || [ -d workflow-artifacts ]; then
+            echo "workflow-artifacts already exist"
+            exit 1
+          fi
+          mkdir workflow-artifacts
+
+      - name: 'Download hugo-static-site artifact'
+        uses: actions/github-script@v3.1.0
+        with:
+          script: |
+            var artifacts = await github.actions.listWorkflowRunArtifacts({
+               owner: context.repo.owner,
+               repo: context.repo.repo,
+               run_id: ${{ github.event.workflow_run.id }},
+            });
+
+            var hugoStaticSiteArtifact = artifacts.data.artifacts.filter((artifact) => {
+              return artifact.name == 'hugo-static-site'
+            })[0];
+
+            var download = await github.actions.downloadArtifact({
+               owner: context.repo.owner,
+               repo: context.repo.repo,
+               artifact_id: hugoStaticSiteArtifact.id,
+               archive_format: 'zip',
+            });
+            var fs = require('fs');
+            fs.writeFileSync('${{github.workspace}}/workflow-artifacts/hugo-static-site.zip', Buffer.from(download.data));
+      - name: Unzip hugo-static-site artifact
+        run: |
+          cd workflow-artifacts
+          unzip hugo-static-site.zip
+
+          if [ ! -f artifact.tar ]; then
+            echo "missing hugo-static-site artifact"
+            exit 1
+          fi
+
+      - name: Setup public submodule to capture changes in github-pages
+        id: public-submodule-setup
+        run: |
+          cd public
+          git checkout main
+          echo "main-sha=$(git rev-parse HEAD)" >> ${GITHUB_OUTPUT}
+          git branch deploy/hugo-pr-${PR_NUM}-${RUN_NUM}
+          git checkout deploy/hugo-pr-${PR_NUM} 2>/dev/null || git checkout -b deploy/hugo-pr-${PR_NUM}
+          echo "pr-sha=$(git rev-parse HEAD)" >> ${GITHUB_OUTPUT}
+          cd ..
+          rm -rf public/*
+          cd public
+          tar -xvf ../workflow-artifacts/artifact.tar
+        env:
+          PR_NUM: ${{ needs.load-pr-data.outputs.pr-number }}
+          RUN_NUM: ${{ github.run_number }}
+
+  
+      - name: Preview changes to public submodule
+        id: preview-public-changes
+        run: |
+          cd public
+          git add .
+          git status
+          echo "diff-count=$(git status --porcelain | wc -l)" >> ${GITHUB_OUTPUT}
+          echo "main-diff-count=$(git diff --name-only main | wc -l)" >> ${GITHUB_OUTPUT}
+
+      - name: Save static site for future PR merge
+        id: save-static-site
+        if: |
+          steps.preview-public-changes.outputs.diff-count != '0' &&
+          steps.preview-public-changes.outputs.main-diff-count != '0'
+        run: |
+          cd public
+          git config user.name 'github-actions[bot]'
+          git config user.email 'github-actions[bot]@users.noreply.github.com'
+          git commit -m "generated static site in pr ${PR_NUM} on lexical-cloud-docs-hugo"
+          git checkout deploy/hugo-pr-${PR_NUM}-${RUN_NUM}
+          git merge --squash deploy/hugo-pr-${PR_NUM}
+          git commit -m "generated static site in pr ${PR_NUM} on lexical-cloud-docs-hugo"
+          git push origin --force deploy/hugo-pr-${PR_NUM}-${RUN_NUM}:deploy/hugo-pr-${PR_NUM}
+          echo "commit-sha=$(git rev-parse HEAD)" >> ${GITHUB_OUTPUT}
+        env:
+          PR_NUM: ${{ needs.load-pr-data.outputs.pr-number }}
+          RUN_NUM: ${{ github.run_number }}
+
+      - name: Delete static site branch for pr if created and static site is now unchanged
+        if: |
+          steps.preview-public-changes.outputs.main-diff-count == '0' &&
+          steps.public-submodule-setup.outputs.main-sha != steps.public-submodule-setup.outputs.pr-sha
+        run: |
+          cd public
+          git push origin :deploy/hugo-pr-${PR_NUM}
+        env:
+          PR_NUM: ${{ needs.load-pr-data.outputs.pr-number }}

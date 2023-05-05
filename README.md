@@ -52,13 +52,6 @@ Customizations to that rendering require:
  * Checkout branch and make desired changes
 
 Preview and test within Github Codespaces.
-**OR**, deploy to Github Pages via provided GitHub Action:
- * Commit and push changes to branch on fork.
- * Enable Github Actions under Pages in Settings.
- * Remove main from deployment branches in gh-pages environment.
- * Enable workflows for the forked repo in Actions.
- * Run the deploy-gh-pages workflow against your desired branch.
- * Visit {username}.github.io/lexical-cloud-docs-hugo/
 
 Contribute back changes:
  * Commit and push desired changes to branch on fork.
