@@ -1,5 +1,5 @@
 {
-  "name": "lexical-cloud-docs-hugo",
+  "name": "lexical-cloud-data-hugo",
   "version": "0.1.0",
   "devDependencies": {
     "postcss-cli": "9.1.0",

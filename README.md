@@ -1,4 +1,4 @@
-## Lexical.cloud Site Generator
+## Lexical.cloud Data Generator
 
 This repo generates json data from [Lexical.cloud data](https://github.com/lexical-cloud/lexical-cloud-docs/) based on the [Docsy theme](https://www.docsy.dev) for [Hugo](https://gohugo.io). The docsy theme, target content and generated site are distinct submodules of this project.
 
