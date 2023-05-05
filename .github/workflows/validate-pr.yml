@@ -1,0 +1,35 @@
+name: validate pr
+concurrency: staging
+on:
+  pull_request:
+    branches:
+      - 'main'
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+
+  preconditions:
+    if: |
+      startsWith(github.head_ref,'dependabot/submodules/public-') == false
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Precondition passed output
+        run: |
+          echo "Preconditions passed"
+
+  save-pr-data:
+    needs: preconditions
+    uses: ./.github/workflows/pr-data-to-artifact.yml
+    with:
+      pr-number: ${{ github.event.pull_request.number }}
+
+  build-artifact:
+    needs: save-pr-data
+    uses: ./.github/workflows/hugo-build.yml
+    with:
+      branch-name: ${{ github.head_ref }}
+    secrets:
+      token: ${{ secrets.GITHUB_TOKEN }}

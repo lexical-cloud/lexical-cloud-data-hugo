@@ -4,52 +4,61 @@ This repo generates json data from [Lexical.cloud data](https://github.com/lexic
 
 ### Setup Env
 
+It's easiest to launch the dev container for this project on GitHub Codespaces.
+
+**OR**, follow the setup instructions below.
+
 Install Prerequisite tools:
 
   * [Install Hugo](https://gohugo.io/getting-started/installing/)
   * [Check Docsy Prereqs](https://www.docsy.dev/docs/get-started/docsy-as-module/installation-prerequisites/)
 
-Dependency of site generation:
-```
-npm install -D postcss@"8.4.13"
-npm install -D postcss-cli@"9.1.0"
-npm install -D autoprefixer@"10.4.7"
-```
-Note: newer versions may exist now
-
-### Setup Project
+#### Setup Project
 
 Clone repository:
 ```
 git clone <url-here>
-```
-
-Add submodules for theme and website:
-```
 cd ${PROJECT_DIR}
-git submodule init
-git submodule update
 ```
 
-Install theme dependencies:
+Then:
 ```
-cd ${PROJECT_DIR}/themes/docsy
-npm install
+make setup
 ```
 
 ### Start Using
 
 Run local server:
 ```
-cd ${PROJECT_DIR}
-hugo server --minify
+make run
 ```	
 
 Generate static site:
 ```
-cd ${PROJECT_DIR}
-hugo --minify
+make build
 ```
+
+---
+
+### Contributing
+
+Most changes for the Lexical.cloud project will occur against the [lexical-cloud-docs](https://github.com/lexical-cloud/lexical-cloud-docs) repo.
+Afterwards, those data contributions will be incorporated into this repository for rendering.
+
+Customizations to that rendering require:
+ * Fork this repository
+ * Launch project in Github Codespaces (optional)
+ * Create new branch from main
+ * Checkout branch and make desired changes
+
+Preview and test within Github Codespaces.
+
+Contribute back changes:
+ * Commit and push desired changes to branch on fork.
+ * Send a pull request back to this repository.
+ * Work with project admins on the PR process.
+
+---
 
 ### License Summary
 
