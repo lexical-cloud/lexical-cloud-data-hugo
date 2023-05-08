@@ -188,10 +188,10 @@ jobs:
           cd public
           git config user.name 'github-actions[bot]'
           git config user.email 'github-actions[bot]@users.noreply.github.com'
-          git commit -m "generated static site in pr ${PR_NUM} on lexical-cloud-docs-hugo"
+          git commit -m "generated static site in pr ${PR_NUM} on lexical-cloud-data-hugo"
           git checkout deploy/hugo-pr-${PR_NUM}-${RUN_NUM}
           git merge --squash deploy/hugo-pr-${PR_NUM}
-          git commit -m "generated static site in pr ${PR_NUM} on lexical-cloud-docs-hugo"
+          git commit -m "generated static site in pr ${PR_NUM} on lexical-cloud-data-hugo"
           git push origin --force deploy/hugo-pr-${PR_NUM}-${RUN_NUM}:deploy/hugo-pr-${PR_NUM}
           echo "commit-sha=$(git rev-parse HEAD)" >> ${GITHUB_OUTPUT}
         env:
@@ -207,3 +207,32 @@ jobs:
           git push origin :deploy/hugo-pr-${PR_NUM}
         env:
           PR_NUM: ${{ needs.load-pr-data.outputs.pr-number }}
+
+
+  comment-on-save:
+    needs:
+      - load-pr-data
+      - save-static-site
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/github-script@v6
+        env:
+          PR_NUM: ${{ needs.load-pr-data.outputs.pr-number }}
+          RUN_NUM: ${{ github.run_number }}
+        with:
+          script: |
+            const { PR_NUM, RUN_NUM } = process.env
+            github.rest.issues.createComment({
+              issue_number: PR_NUM,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `
+            ### Stage phase requires further attention.
+            _(run ${RUN_NUM} of comment-on-save in finalize-pr workflow)_
+
+            @lexical-cloud/admins will take these actions:
+              - [ ] Create pr for deploy/hugo-pr-${PR_NUM} on lexical-cloud-data repo.
+              - [ ] Update public submodule commit to match deploy/hugo-pr-${PR_NUM} branch.
+
+            Expect a response on this comment when actions are completed.`
+            })
