@@ -212,7 +212,9 @@ jobs:
   comment-on-save:
     needs:
       - load-pr-data
-      - save-static-site
+      - stage
+    if: |
+      needs.stage.static-site-sha != ''
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/github-script@v6
